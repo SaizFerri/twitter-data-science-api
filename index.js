@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const MongoClient = require('mongodb').MongoClient
     , assert = require('assert')
 const Twitter = require('twitter')
+const cors = require('cors')
 //const Tweet = require('./model/tweet')
 //const tunnel = require('tunnel-ssh')
 
@@ -126,6 +127,7 @@ let formatedOutput = function (languages) {
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
+app.use(cors())
 
 app.get('/api/tweets/languages', (req, res) => {
   MongoClient.connect(url, (err, db) => {
