@@ -27,11 +27,19 @@ let client = new Twitter({
 
 let findTweets = function (db, callback) {
 
-  let collection = db.collection('tweetsBerlin')
-  collection.find({}).toArray((err, docs) => {
-    assert.equal(err, null)
-    callback(docs)
-  })
+  let collection = db.collection('twitter.tweetsBerlinGeo')
+    collection.mapReduce(
+  	function () { emit(this.lang, 1) },
+  	function (key, values) { return Array.sum( values )},
+  	{
+  		out: {inline: 1}
+  	},
+
+    function (err, collection, stats) {
+      console.log(err);
+      callback(collection)
+    }
+  )
 }
 
 /* const config = {
@@ -60,7 +68,7 @@ const server = tunnel(config, (error, server) => {
         })
     });
 }); */
-let formatLanguages = function (docs) {
+/*let formatLanguages = function (docs) {
 
     let formatedLanguages = []
 
@@ -82,7 +90,7 @@ let formatLanguages = function (docs) {
     }
 
     return formatedLanguages
-}
+}*/
 
 let getLanguages = function (docs) {
 
@@ -90,12 +98,12 @@ let getLanguages = function (docs) {
 
   for(let i = 0; i < docs.length; i++) {
     const language = languageTwitter.find(language => {
-      return docs[i].code === language.code
+      return docs[i]._id === language.code
     })
     if (language) {
-      languagesSorted.push({ code: docs[i].code, count: docs[i].count, name: language.name })
+      languagesSorted.push({ code: docs[i]._id, count: docs[i].value, name: language.name })
     } else {
-      languagesSorted.push({ code: docs[i].code, count: docs[i].count, name: "Not found" })
+      languagesSorted.push({ code: docs[i]._id, count: docs[i].value, name: "Not found (" + docs[i]._id + ")" })
     }
   }
   return languagesSorted
@@ -140,8 +148,8 @@ app.get('/api/tweets/languages', (req, res) => {
     })
 
     findTweets(db, (docs) => {
-      let languages = formatLanguages(docs)
-      let formated = getLanguages(languages)
+      // let languages = formatLanguages(docs)
+      let formated = getLanguages(docs)
       let sorted = formatedOutput(formated)
 
       res.send({ languages: sorted })
