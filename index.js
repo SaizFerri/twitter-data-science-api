@@ -8,6 +8,8 @@ const MongoClient = require('mongodb').MongoClient
     , assert = require('assert')
 const Twitter = require('twitter')
 const cors = require('cors')
+const Client = require('node-rest-client').Client
+let client = new Client()
 //const Tweet = require('./model/tweet')
 //const tunnel = require('tunnel-ssh')
 
@@ -18,7 +20,7 @@ const url = 'mongodb://localhost:27017/TwitterLocal';
 
 let languageTwitter = []
 
-let client = new Twitter({
+let clientTwitter = new Twitter({
   consumer_key: configTwitter.consumer_key,
   consumer_secret: configTwitter.consumer_secret,
   access_token_key: configTwitter.access_token_key,
@@ -133,6 +135,7 @@ let formatedOutput = function (languages) {
   return formatedOutput
 }
 
+
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors())
@@ -142,7 +145,7 @@ app.get('/api/tweets/languages', (req, res) => {
     assert.equal(null, err)
     console.log('Connected to the database...')
 
-    client.get('https://api.twitter.com/1.1/help/languages.json', (error, languages) => {
+    clientTwitter.get('https://api.twitter.com/1.1/help/languages.json', (error, languages) => {
       if (error) throw error
       languageTwitter = languages
     })
@@ -155,6 +158,83 @@ app.get('/api/tweets/languages', (req, res) => {
       res.send({ languages: sorted })
       db.close()
     })
+  })
+})
+
+app.get('/api/hashtags', (req, res) => {
+  let excludeHashTags = [
+      'nowplaying',
+      'berlin',
+      'ger',
+      'brandenburg',
+      'bbradio',
+      'trndnl',
+      'germany',
+      'jobs',
+      'stralsund',
+      'potsdam',
+      'kassel',
+      'dasauge', //Job ding
+      'hro', //Human Resource Outsourcing
+      'youtube',
+      'schwerin',
+      'koblenz',
+      'rocks',
+      'bremen',
+      'hits',
+      'bremerhaven',
+      'mecklenburg',
+      'mecklenburgvorpommern',
+      'radio',
+      'stream',
+      'hessen',
+      'rheinlandpfalz',
+      'deutschland',
+      'webcam',
+      'photo',
+      'fashion',
+      'oranienburg',
+      'music',
+      'cottbus',
+      'wittenberge',
+      'photography',
+      'radioteddy',
+      'eberswalde',
+      'wittenstock',
+      'perleberg',
+      'eisenhuettenstadt',
+      'frankfurtoder',
+      'kreuzberg',
+      'neukölln',
+      'europe',
+      'hiring',
+      'fashionblogger',
+      'party'
+  ]
+
+  let fromDate = new Date()
+
+  fromDate.setHours(0)
+  fromDate.setMinutes(0)
+  fromDate.setSeconds(0)
+  fromDate.setMilliseconds(0)
+  // fromDate.setDate(fromDate.getDate() - 1)
+
+  let toDate = new Date()
+  toDate.setHours(0)
+  toDate.setMinutes(0)
+  toDate.setSeconds(0)
+  toDate.setMilliseconds(0)
+  toDate.setDate(toDate.getDate() + 1)
+  toDate.setMilliseconds(-1)
+
+  client.get('http://broccoli.f4.htw-berlin.de:8080/twitter/most-used-hash-tags-all', { parameters: { count: 300, fromDate: fromDate, toDate: toDate } } , (data, response) => {
+    res.send({
+      fromDate: fromDate,
+      toDate: toDate,
+      hashtags: data
+    })
+    // res.send(data.filter((rs) => !excludeHashTags.includes(rs.text)))
   })
 })
 
